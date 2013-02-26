@@ -50,7 +50,6 @@ def convert_fasta(fname, index=None, wrap=50):
     buf = ''
     last = (0, '', 0, '')
     idxfile = None
-    hptpos = 0
 
     if index:
         idxfile = gzip.open(index, 'w')
@@ -82,8 +81,7 @@ def convert_fasta(fname, index=None, wrap=50):
 
         for pos, base, count, quals in hplist[:-1]:
             if idxfile and count > 1:
-                idxfile.write('%s\t%s\t%s\t%s\n' % (hptpos, pos, base, count))
-            hptpos += 1
+                idxfile.write('%s\t%s\t%s\n' % (pos, base, count))
 
             buf += base
 
@@ -99,7 +97,7 @@ def convert_fasta(fname, index=None, wrap=50):
 
     if idxfile:
         if last[2] > 1:
-            idxfile.write('%s\t%s\t%s\t%s\n' % (hptpos, last[0], last[1], last[2]))
+            idxfile.write('%s\t%s\t%s\n' % (last[0], last[1], last[2]))
 
 
 if __name__ == '__main__':

@@ -92,6 +92,7 @@ def convert_seq(seq, qual='', lastpos=0, lastbase='', lastcount=0, lastquals='')
         else:
             if lastbase:
                 yield (startpos, lastbase, lastcount, lastquals)
+                lastpos = startpos + lastcount
 
             lastbase = s
             lastcount = 1

@@ -12,7 +12,6 @@ function usage() {
     echo "  bampost  - Convert aligned reads (BAM file) from HPT coordinates"
     echo "             to native coordinates."
     echo "  fastx    - Convert FASTA/FASTQ files to HPT versions"
-    echo "  trim     - Trim homopolymers in FASTQ files based on quality score"
     echo ""
     echo "Run 'hpt help CMD' for more information about a specific command"
     echo -n "hpt "

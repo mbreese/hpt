@@ -4,7 +4,7 @@ import gzip
 from eta import ETA
 
 
-def gzip_aware_reader(fname):
+def gzip_aware_reader(fname, callback=None):
     if fname[-3:] == '.gz':
         f = gzip.open(fname)
     else:
@@ -12,6 +12,10 @@ def gzip_aware_reader(fname):
 
     eta = ETA(os.stat(fname).st_size, fileobj=f)
     for line in f:
+        extra = None
+        if callback:
+            extra = callback()
+        eta.print_status(extra=extra)
         yield line
 
     f.close()
@@ -30,7 +34,7 @@ def fastx_autodetect(fname):
 def FASTAChunkedReader(fname):
     name = ''
 
-    for line in gzip_aware_reader(fname):
+    for line in gzip_aware_reader(fname, callback=lambda: name):
         if line[0] == '>':
             name = line.strip()[1:]
         else:
@@ -38,16 +42,17 @@ def FASTAChunkedReader(fname):
 
 
 def FASTQReader(fname):
-    reader = gzip_aware_reader(fname)
+    name = ''
+    reader = gzip_aware_reader(fname, callback=lambda: name)
 
     while True:
         try:
-            name = reader.next().strip().upper()
+            name = reader.next().strip()[1:]
             seq = reader.next().strip()
             reader.next()
             qual = reader.next().strip()
 
-            yield (name, seq, qual)
+            yield (name, seq.upper(), qual)
         except:
             break
 

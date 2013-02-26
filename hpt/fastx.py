@@ -17,8 +17,32 @@ import argparse
 import hpt
 
 
-def convert_fastq(fname, index=None):
-    pass
+def maxqual(quals):
+    '''
+    >>> maxqual('ACBD')
+    'D'
+    >>> maxqual(';;;;')
+    ';'
+    '''
+
+    maxval = 0
+    for q in quals:
+        if ord(q) > maxval:
+            maxval = ord(q)
+    return chr(maxval)
+
+
+def convert_fastq(fname, qualfunc='max'):
+    for name, seq, qual in hpt.FASTQReader(fname):
+        convseq = ''
+        convqual = ''
+
+        for pos, base, count, posquals in hpt.convert_seq(seq, qual):
+            convseq += base
+            if qualfunc == 'max':
+                convqual += maxqual(posquals)
+
+        sys.stdout.write('@%s\n%s\n+\n%s\n' % (name, convseq, convqual))
 
 
 def convert_fasta(fname, index=None, wrap=50):
@@ -26,6 +50,7 @@ def convert_fasta(fname, index=None, wrap=50):
     buf = ''
     last = (0, '', 0, '')
     idxfile = None
+    hptpos = 0
 
     if index:
         idxfile = gzip.open(index, 'w')
@@ -57,7 +82,8 @@ def convert_fasta(fname, index=None, wrap=50):
 
         for pos, base, count, quals in hplist[:-1]:
             if idxfile and count > 1:
-                idxfile.write('%s\t%s\t%s\n' % (pos, base, count))
+                idxfile.write('%s\t%s\t%s\t%s\n' % (hptpos, pos, base, count))
+            hptpos += 1
 
             buf += base
 
@@ -73,13 +99,13 @@ def convert_fasta(fname, index=None, wrap=50):
 
     if idxfile:
         if last[2] > 1:
-            idxfile.write('%s\t%s\t%s\n' % last)
+            idxfile.write('%s\t%s\t%s\t%s\n' % (hptpos, last[0], last[1], last[2]))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='hpt fastx', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('filename', help="FASTA/FASTQ file to convert (may be gzipped)")
-    parser.add_argument('-index', help="Output an HPI index for converting back to native coordinates")
+    parser.add_argument('-index', help="Output an HPI index for converting back to native coordinates (FASTA only)")
     args = parser.parse_args()
 
     if not os.path.exists(args.filename):
@@ -91,7 +117,10 @@ if __name__ == '__main__':
     if filetype == 'fasta':
         convert_fasta(args.filename, index=args.index)
     elif filetype == 'fastq':
-        convert_fastq(args.filename, index=args.index)
+        if args.index:
+            sys.stderr.write('Invalid argument! Index output not supported with FASTQ files!\n\n')
+            sys.exit(1)
+        convert_fastq(args.filename)
     else:
         sys.stderr.write('File: %s is not a FASTA/FASTQ file!\n\n' % args.filename)
         sys.exit(1)

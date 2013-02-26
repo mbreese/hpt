@@ -24,7 +24,7 @@ def convert_fastq(fname, index=None):
 def convert_fasta(fname, index=None, wrap=50):
     lastname = None
     buf = ''
-    last = (0, '', 0)
+    last = (0, '', 0, '')
     idxfile = None
 
     if index:
@@ -36,22 +36,26 @@ def convert_fasta(fname, index=None, wrap=50):
 
         if name != lastname:
             if buf:
+                buf += last[1]
+
+                while len(buf) >= wrap:
+                    sys.stdout.write('%s\n' % buf[:wrap])
+                    buf = buf[wrap:]
                 sys.stdout.write('%s\n' % buf)
 
             sys.stdout.write('>%s\n' % name)
             buf = ''
             pos = 0
             lastname = name
-            last = (0, '', 0)
+            last = (0, '', 0, '')
 
             if idxfile:
                 idxfile.write('>%s\n' % name)
 
-        hplist = list(hpt.convert_seq(seq, *last))
-        print hplist
+        hplist = list(hpt.convert_seq(seq, '', *last))
         last = hplist[-1]
 
-        for pos, base, count in hplist[:-1]:
+        for pos, base, count, quals in hplist[:-1]:
             if idxfile and count > 1:
                 idxfile.write('%s\t%s\t%s\n' % (pos, base, count))
 
@@ -65,6 +69,7 @@ def convert_fasta(fname, index=None, wrap=50):
     while len(buf) >= wrap:
         sys.stdout.write('%s\n' % buf[:wrap])
         buf = buf[wrap:]
+    sys.stdout.write('%s\n' % buf)
 
     if idxfile:
         if last[2] > 1:

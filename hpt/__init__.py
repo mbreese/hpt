@@ -52,26 +52,27 @@ def FASTQReader(fname):
             break
 
 
-def convert_seq(seq, qual='', lastpos=0, lastbase='', lastcount=0):
+def convert_seq(seq, qual='', lastpos=0, lastbase='', lastcount=0, lastquals=''):
     '''
     Strip out hp runs
     >>> list(convert_seq('aatggc'))
-    [(0, 'a', 2), (2, 't', 1), (3, 'g', 2), (5, 'c', 1)]
+    [(0, 'a', 2, ''), (2, 't', 1, ''), (3, 'g', 2, ''), (5, 'c', 1, '')]
 
     Overlap base is different
     seq: aatggc/aatggc
     >>> list(convert_seq('aatggc', '', 5, 'c', 1))
-    [(5, 'c', 1), (6, 'a', 2), (8, 't', 1), (9, 'g', 2), (11, 'c', 1)]
+    [(5, 'c', 1, ''), (6, 'a', 2, ''), (8, 't', 1, ''), (9, 'g', 2, ''), (11, 'c', 1, '')]
 
     Overlap base is same
     seq: aatggc/ccaatg/gggatt
     >>> list(convert_seq('ccaatg', '', 5, 'c', 1))
-    [(5, 'c', 3), (8, 'a', 2), (10, 't', 1), (11, 'g', 1)]
+    [(5, 'c', 3, ''), (8, 'a', 2, ''), (10, 't', 1, ''), (11, 'g', 1, '')]
     >>> list(convert_seq('gggatt', '', 11, 'g', 1))
-    [(11, 'g', 4), (15, 'a', 1), (16, 't', 2)]
+    [(11, 'g', 4, ''), (15, 'a', 1, ''), (16, 't', 2, '')]
     '''
 
     startpos = lastpos
+
     if lastpos:
         lastpos += lastcount
 
@@ -81,14 +82,18 @@ def convert_seq(seq, qual='', lastpos=0, lastbase='', lastcount=0):
     for s, q in zip(seq, qual):
         if s == lastbase:
             lastcount += 1
+            if q != ' ':
+                lastquals += q
         else:
             if lastbase:
-                yield (startpos, lastbase, lastcount)
+                yield (startpos, lastbase, lastcount, lastquals)
 
             lastbase = s
             lastcount = 1
             startpos = lastpos
+            if q != ' ':
+                lastquals = q
 
         lastpos += 1
 
-    yield (startpos, lastbase, lastcount)
+    yield (startpos, lastbase, lastcount, lastquals)

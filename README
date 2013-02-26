@@ -1,0 +1,16 @@
+Homopolymer truncation (HPT) - Converts FASTA/FASTQ files to truncate all
+homopolymers to a single base. This has the effect of removing homopolymer
+indels from downstream analysis. Based upon the error models of some high-
+throughput sequencing technologies, this can be highly benefitial when
+looking for sequence variations. It is somewhat similar to aligning sequences
+in flow-space, but has the slight difference in that the length of the
+homopolymer isn't considered.
+
+HPT analysis may be useful for 454, PacBio, Ion Torrent datasets
+
+Caution: If HPT converted sequences are used for variant detection, any
+variation that would cause an expansion of a homopolymer will be missed.
+
+    Example:
+    GAGG -> GAAG (G->A) would both be converted to GAG with HPT and the
+    variant would be missed.

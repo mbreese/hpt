@@ -1,0 +1,71 @@
+#!/bin/bash
+REAL=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' "$0"`
+DIR=`dirname "$REAL"`/../
+
+function usage() {
+    cat $DIR/README
+    echo ""
+    echo ""
+    echo "Usage: hpt COMMAND"
+    echo ""
+    echo "Commands:"
+    echo "  bampost  - Convert aligned reads (BAM file) from HPT coordinates"
+    echo "             to native coordinates."
+    echo "  fastx    - Convert FASTA/FASTQ files to HPT versions"
+    echo "  trim     - Trim homopolymers in FASTQ files based on quality score"
+    echo ""
+    echo "Run 'hpt help CMD' for more information about a specific command"
+    echo -n "hpt "
+    cat $DIR/VERSION
+
+    exit 1
+}
+
+if [ "$1" == "" ]; then
+    usage
+fi
+
+
+. "$DIR"/env/bin/activate
+export PYTHONPATH=$PYTHONPATH:"$DIR"
+
+if [[ -e "$DIR"/.git && "$1" == "update" ]]; then
+    cd "$DIR"
+    
+    if [ "$2" != "" ]; then
+        echo "Updating from $2 branch"
+        git checkout $2
+        git pull origin $2
+    else
+        echo "Updating from current branch"
+        git pull
+    fi
+
+    exit 0
+fi
+
+
+if [ "$1" == "help" ]; then
+    if [ "$2" == "" ]; then
+        usage
+    fi
+    
+    "$DIR"/hpt/$2.py -h
+else
+    cmd=$1
+
+    if [ ! -e "$DIR"/hpt/$cmd.py ]; then
+        usage
+    fi
+
+    shift
+
+    ARGS=()
+    i=0
+    for arg in "$@"; do
+        ARGS[$i]="$arg"
+        ((++i))
+    done
+    
+    exec "$DIR"/hpt/$cmd.py "${ARGS[@]}"
+fi
